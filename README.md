@@ -2,11 +2,9 @@
 ![Expression_git](https://user-images.githubusercontent.com/68480967/88527847-7131b980-d01b-11ea-8921-cef3d1d83b43.png)
 expression_recognition.py - Main file.
       
-Masks folder - This contains all the images of masks, this folder must be present along with expression_recognition.py file.
+Masks folder - This contains all the images of masks. This folder must be present along with expression_recognition.py file.
 
-Models folder - This contains the trained deep-learning model. 
-      The required model for this project is 4Emotions.h5
-      Other models are trained over 7 diffrent emotions.
+Models folder - This contains the trained deep-learning model. The required model for this project is 4Emotions.h5 and there are other model which is trained over 7 diffrent emotions.
       
 haarcascade_palm.xml - This haar-cascade file is used to detect palms in the frame.
 
