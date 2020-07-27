@@ -2,11 +2,15 @@
 ![Expression_git](https://user-images.githubusercontent.com/68480967/88527847-7131b980-d01b-11ea-8921-cef3d1d83b43.png)
 expression_recognition.py - Main file
       You just need to run this file.
-Masks folder - This contains all the images of masks, this folder must be present along with expression_recognition.py file
+      
+Masks folder - This contains all the images of masks, this folder must be present along with expression_recognition.py file.
+
 Models folder - This contains the trained deep-learning model. 
       The required model for this project is 4Emotions.h5
       Other models are trained over 7 diffrent emotions.
+      
 haarcascade_palm.xml - This haar-cascade file is used to detect palms in the frame.
+
 shape_predictor_81_face_landmarks.dat - This file is used to project the 81 landmark points on the face.
 
 ### Here is a small preview of the project...
