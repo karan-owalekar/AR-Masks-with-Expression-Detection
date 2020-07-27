@@ -1,22 +1,28 @@
 import cv2
 import dlib
 import numpy as np
-from imutils import face_utils
-from tensorflow.keras.models import model_from_json
 from tensorflow.keras.models import load_model
 import os,os.path
 from datetime import datetime
+import math
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-loaded_model = load_model("4Emotions.h5")
+#Load the trained tensorflow model...
+loaded_model = load_model("Models/4Emotions.h5")
 
 def predictEmotion(img):
+    #This function returns the emotion based on face passed in img variable...
+
+    #Resizing the image to the size that we specified while training the model...
     roi = cv2.resize(img, (48, 48))
     x = (roi[np.newaxis, :, :, np.newaxis])
     preds = loaded_model.predict(x)
+
+    #Returns an integer ...
     return (np.argmax(preds))
 
 def overlay_transparent(background, overlay, x, y):
+    #This function is used to mask the transperent layer form the PNG image...
 
     background_width = background.shape[1]
     background_height = background.shape[0]
@@ -48,9 +54,12 @@ def overlay_transparent(background, overlay, x, y):
 
     background[y:y+h, x:x+w] = (1.0 - mask) * background[y:y+h, x:x+w] + mask * overlay_image
 
+    #The function returns the part of frame with emotion-Mask on top of it...
     return background
 
 def setIcon(frame):
+    #This function sets the mask icon on the top of the frame, it also shows the number of available masks...
+
     mask1 = cv2.imread("Masks/Mask1/icon.jpg")
     mask1 = cv2.resize(mask1, (30,30), interpolation = cv2.INTER_AREA)
     mask2 = cv2.imread("Masks/Mask2/icon.jpg")
@@ -62,7 +71,7 @@ def setIcon(frame):
     mask5 = cv2.imread("Masks/Mask5/icon.jpg")
     mask5 = cv2.resize(mask5, (30,30), interpolation = cv2.INTER_AREA)
     
-
+    #Location of each mask icon...
     #MASK1 cv2.rectangle(frame, (15,15), (45,45), (0,255,0), 1)
     #MASK2 cv2.rectangle(frame, (55,15), (85,45), (0,255,0), 1)
     #MASK1 cv2.rectangle(frame, (95,15), (125,45), (0,255,0), 1)
@@ -89,36 +98,41 @@ def setIcon(frame):
     img = cv2.addWeighted(mask5, 1, roi5, 1, 0)
     frame[15:45,175:205] = img
 
-
     return frame
 
 def Mask1(landmarks_points,leftEye,rightEye,mouth):
-    mouthExpandValue = 1.0
-    eyeExpandValue = 1.0
-    Y_Translaton_eye = 0
-    Y_Translaton_mouth = 0
+    #The default values
+    mouthExpandValue = 1.0      #To specify how big the mouth image size should be compared to person's mouth size
+    eyeExpandValue = 1.0        #To specify how big the eye image size should be compared to person's eye size
+    Y_Translaton_eye = 0        #To move the eye position up or down, this is important if eye image is not of standard size...
+    Y_Translaton_mouth = 0      #To move the mouth up or down, if image has other elements then mouth then it needs to be configured...
 
+    #The following if-elif block is used to configure the above values for each mask emotions...
     if emotionLabel[emotionIndex] == "Natural":
-        mouthExpandValue,eyeExpandValue = 1.2,1.8
+        mouthExpandValue, eyeExpandValue = 1.2, 2.3
     elif emotionLabel[emotionIndex] == "Happy":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1.0,1.5,6
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1.0, 2.1, 6
     elif emotionLabel[emotionIndex] == "Angry":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1.2,1.6,7
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1.2, 2.5, 7
     elif emotionLabel[emotionIndex] == "Shock":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.3,2.3,-6
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.3, 3.2, -6
 
-
-    eyeDist = int((landmarks_points[35][0] - landmarks_points[38][0])*eyeExpandValue)
+    #Calculating the dist of end points of a persons eye, and then multiplying it with eyeExpandValue to get desired size...
+    eyeDist = int(math.sqrt((landmarks_points[36][0] - landmarks_points[39][0])**2 + (landmarks_points[36][1] - landmarks_points[39][1])**2) * eyeExpandValue)
     if eyeDist%2==1:
-        eyeDist+=1
+        eyeDist+=1      #Getting an even value
     mouthDist = int((landmarks_points[54][0] - landmarks_points[48][0])*mouthExpandValue)
     if mouthDist%2==1:
         mouthDist+=1
 
+    #Resizing the images according  to eyeDist and mouthDist...
     resized_leftEye = cv2.resize(leftEye, (eyeDist,eyeDist), interpolation = cv2.INTER_AREA)
     resized_rightEye = cv2.resize(rightEye, (eyeDist,eyeDist), interpolation = cv2.INTER_AREA)
     resized_mouth = cv2.resize(mouth, (mouthDist,mouthDist), interpolation = cv2.INTER_AREA)
 
+    #The following three lines first take the image of required size from frame...
+    #Then pass that to overlay_transparent function to overlap the PNG image on top of it...
+    #Then, replacing the actual frame area with that new image...
     roi_LeftEye = frame[landmarks_points[37][1]-eyeDist//2-Y_Translaton_eye:landmarks_points[37][1]+eyeDist//2-Y_Translaton_eye,landmarks_points[37][0]-eyeDist//2:landmarks_points[37][0]+eyeDist//2]
     out = overlay_transparent(roi_LeftEye, resized_leftEye, 0, 0)
     frame[landmarks_points[37][1]-eyeDist//2-Y_Translaton_eye:landmarks_points[37][1]+eyeDist//2-Y_Translaton_eye,landmarks_points[37][0]-eyeDist//2:landmarks_points[37][0]+eyeDist//2] = out
@@ -139,16 +153,15 @@ def Mask2(landmarks_points,leftEye,rightEye,mouth):
     Y_Translaton_mouth = 0
 
     if emotionLabel[emotionIndex] == "Natural":
-        mouthExpandValue,eyeExpandValue = 1.9,2.0
+        mouthExpandValue, eyeExpandValue = 1.9, 2.8
     elif emotionLabel[emotionIndex] == "Happy":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.6,1.9,-10
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.6, 2.7, -10
     elif emotionLabel[emotionIndex] == "Angry":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.8,1.5,-4
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.8, 2.4, -4
     elif emotionLabel[emotionIndex] == "Shock":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 3,2.3,-5
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 3, 3.1, -5
 
-
-    eyeDist = int((landmarks_points[35][0] - landmarks_points[38][0])*eyeExpandValue)
+    eyeDist = int(math.sqrt((landmarks_points[36][0] - landmarks_points[39][0])**2 + (landmarks_points[36][1] - landmarks_points[39][1])**2) * eyeExpandValue)
     if eyeDist%2==1:
         eyeDist+=1
     mouthDist = int((landmarks_points[54][0] - landmarks_points[48][0])*mouthExpandValue)
@@ -179,16 +192,16 @@ def Mask3(landmarks_points,leftEye,rightEye,mouth):
     Y_Translaton_mouth = 0
 
     if emotionLabel[emotionIndex] == "Natural":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.2,1.9,2
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.2, 2.6, 2
     elif emotionLabel[emotionIndex] == "Happy":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1.6,2.0,4
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1.6,3.0,4
     elif emotionLabel[emotionIndex] == "Angry":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.6,1.6,-4
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.6,2.9,-4
     elif emotionLabel[emotionIndex] == "Shock":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth,Y_Translaton_eye = 1.7,2.5,-8,7
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth, Y_Translaton_eye = 1.7,3.5,-8,7
 
 
-    eyeDist = int((landmarks_points[35][0] - landmarks_points[38][0])*eyeExpandValue)
+    eyeDist = int(math.sqrt((landmarks_points[36][0] - landmarks_points[39][0])**2 + (landmarks_points[36][1] - landmarks_points[39][1])**2) * eyeExpandValue)
     if eyeDist%2==1:
         eyeDist+=1
     mouthDist = int((landmarks_points[54][0] - landmarks_points[48][0])*mouthExpandValue)
@@ -219,16 +232,16 @@ def Mask4(landmarks_points,leftEye,rightEye,mouth):
     Y_Translaton_mouth = 0
 
     if emotionLabel[emotionIndex] == "Natural":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.7,3.5,20
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.7, 4.8, 20
     elif emotionLabel[emotionIndex] == "Happy":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.7,3.5,13
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.7, 4.8, 13
     elif emotionLabel[emotionIndex] == "Angry":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth = 1.7,3.5,10
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth = 1.7, 5.0, 10
     elif emotionLabel[emotionIndex] == "Shock":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_mouth,Y_Translaton_eye = 2.9,3.8,10,4
+        mouthExpandValue, eyeExpandValue, Y_Translaton_mouth, Y_Translaton_eye = 2.9, 5.4, 10, 4
 
 
-    eyeDist = int((landmarks_points[35][0] - landmarks_points[38][0])*eyeExpandValue)
+    eyeDist = int(math.sqrt((landmarks_points[36][0] - landmarks_points[39][0])**2 + (landmarks_points[36][1] - landmarks_points[39][1])**2) * eyeExpandValue)
     if eyeDist%2==1:
         eyeDist+=1
     mouthDist = int((landmarks_points[54][0] - landmarks_points[48][0])*mouthExpandValue)
@@ -259,16 +272,16 @@ def Mask5(landmarks_points,leftEye,rightEye,mouth):
     Y_Translaton_mouth = 0
 
     if emotionLabel[emotionIndex] == "Natural":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1,3.5,5
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1, 4.7, 5
     elif emotionLabel[emotionIndex] == "Happy":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1,3.5,3
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1, 4.7, 3
     elif emotionLabel[emotionIndex] == "Angry":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1,3.5,3
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1, 4.7, 3
     elif emotionLabel[emotionIndex] == "Shock":
-        mouthExpandValue,eyeExpandValue,Y_Translaton_eye = 1.5,3.5,4
+        mouthExpandValue, eyeExpandValue, Y_Translaton_eye = 1.5, 4.7, 4
 
 
-    eyeDist = int((landmarks_points[35][0] - landmarks_points[38][0])*eyeExpandValue)
+    eyeDist = int(math.sqrt((landmarks_points[36][0] - landmarks_points[39][0])**2 + (landmarks_points[36][1] - landmarks_points[39][1])**2) * eyeExpandValue)
     if eyeDist%2==1:
         eyeDist+=1
     mouthDist = int((landmarks_points[54][0] - landmarks_points[48][0])*mouthExpandValue)
@@ -292,30 +305,42 @@ def Mask5(landmarks_points,leftEye,rightEye,mouth):
     out = overlay_transparent(roi_Mouth, resized_mouth, 0, 0)
     frame[mouthMid[1]-mouthDist//2-Y_Translaton_mouth:mouthMid[1]+mouthDist//2-Y_Translaton_mouth,mouthMid[0]-mouthDist//2:mouthMid[0]+mouthDist//2] = out
 
+#Using dlib to get face landmarks...
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_81_face_landmarks.dat")
 
+#Using haar cascade file for palm detection...
 palm_cascade = cv2.CascadeClassifier("haarcascade_palm.xml")
 
+#Capturing video input from webcam...
 cap = cv2.VideoCapture(0)
 
+#Specifing the labels, so when we predict an emotion we can get the label for that integer prediction...
 emotionLabel =  ["Angry","Happy","Natural","Shock"]
-emotionIndex = 0
+emotionIndex = 0        #Setting the initial emotion as neutral, later it changes according to persons expression...
 
-maskIndex = 2
-changeMask = 0
+maskIndex = 2       #Setting up the first (default) mask when starting the program...
+changeMask = 0      #Counter for changing the mask... when a palm is detected, the counter goes up... and when a certain number is hit the maskIndex increases/decreases based on hand you raised...
 
+#Infinately looping over the video captured from webcam...
 while True:
     ret, frame   = cap.read()
+
+    #Flipping the video input, for better user-ecperience...
     frame = cv2.flip(frame, 1)
+    #Converting to grayscale for prediction...
     gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
     frame = setIcon(frame)
 
     faces = detector(gray)
+    #Faces will contain the location of all detected faces in the frame...
+    #Looping over all the faces to set mask over every every face...
     for face in faces:
+        #We get the rectangle values in face, so gettig each value individually...
         x_axis, y_axis, w, h = face.left(), face.top(), face.width(), face.height()
-        landmarks = predictor(gray, face)
+
+        landmarks = predictor(gray, face)    #Prdicting the location of 81 landmark points...
         landmarks_points = []
         for n in range(0, 81):
             x = landmarks.part(n).x
@@ -324,17 +349,23 @@ while True:
             #cv2.circle(frame,(x,y),1,(0,0,128),-1)
 
         faceROI = gray[y_axis:y_axis+h,x_axis:x_axis+h]
+
+        #Using try-except to avoid errors if face is not detected...
         try:
-            predictedEmotion = predictEmotion(faceROI)
+            predictedEmotion = predictEmotion(faceROI)   #Predicting the expression...
         except:
             predictedEmotion = 0
         emotionIndex = predictedEmotion
 
+        #Loading the appropriate mask from appropriate folder...
         leftEye = cv2.imread(f"Masks/Mask{maskIndex}/{emotionLabel[emotionIndex]}/left_eye.png",-1)
         rightEye = cv2.imread(f"Masks/Mask{maskIndex}/{emotionLabel[emotionIndex]}/right_eye.png",-1)
         mouth = cv2.imread(f"Masks/Mask{maskIndex}/{emotionLabel[emotionIndex]}/mouth.png",-1)
 
-        
+        #Depending on selected mask, We execute the appropriate function...
+        #Diffrent functions are required because diffrent masks have diffrent scaling and translation values...
+        #Content of each function is same...
+        #Splitting them into diffrent functions reduces the complexity and total steps to project mask on the face making the process slight faster...
         if maskIndex==1:
             cv2.rectangle(frame, (15,15), (45,45), (255,255,0), 1)
             Mask1(landmarks_points,leftEye,rightEye,mouth)
@@ -353,12 +384,17 @@ while True:
         else:
             pass
 
+    #Program to detect the palm...
     palm = palm_cascade.detectMultiScale(gray,scaleFactor=1.5,minNeighbors=5)
     for (x,y,w,h) in palm:
+        #Creating a yellow border to specify mask change process...
         cv2.rectangle(frame, (0,0), (640,480), (0,255,0), 2)
 
+        #Getting the central value of palm box...
         centre_x = x+w // 2
         changeMask += 1
+        #Using that value to locate the position of palm in the frame ... left or right
+        #Depending on position, mask index increases or decreases, i.e. selecting the mask to left or to right...
         if centre_x > 320 and changeMask > 10:
             changeMask=0
             maskIndex+=1
@@ -371,9 +407,13 @@ while True:
                 maskIndex=5
 
     cv2.imshow("frame",frame)
+    #Checks if user pressed any key...
     key = cv2.waitKey(1)
+
+    #When Pressed "q", the frame closes..
     if key == ord("q"):
         break
+    #SPACEBAR to captuer screenshot...
     elif key == ord(" "):
         x=(len([iq for iq in os.scandir(r'C:\Codes\Python\Expression Recognition\Saved Images')]))
         cv2.imwrite('Saved Images/Screenshot_'+str(x)+'.jpg',frame)
