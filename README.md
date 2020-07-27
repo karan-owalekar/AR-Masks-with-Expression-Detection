@@ -1,4 +1,6 @@
 # AR-Masks: with Expression Detection
+![Expression_git](https://user-images.githubusercontent.com/68480967/88527847-7131b980-d01b-11ea-8921-cef3d1d83b43.png)
+
 #### Here is a small preview of the project...
 ![ExpressinonDetection](https://user-images.githubusercontent.com/68480967/88522162-99b5b580-d013-11ea-9fcc-b83217ea0354.gif)
 
