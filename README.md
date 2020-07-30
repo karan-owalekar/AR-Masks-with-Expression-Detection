@@ -3,7 +3,7 @@
 ### Here is a small preview of the project...
 ![ExpressinonDetection](https://user-images.githubusercontent.com/68480967/88522162-99b5b580-d013-11ea-9fcc-b83217ea0354.gif)
 
-#### WOrking
+#### Working
 
 > First the program detects user's face.
 
@@ -20,6 +20,8 @@
 > The current mask design is shown in the top of the video frames.
 
 > Using SPACEBAR I can take "screenshots" of the image, which will be stored in "Saved Image" folder.
+
+#### Files and folders:
 
 expression_recognition.py - Main file.
       
