@@ -3,9 +3,7 @@
 ### Here is a small preview of the project...
 ![ExpressinonDetection](https://user-images.githubusercontent.com/68480967/88522162-99b5b580-d013-11ea-9fcc-b83217ea0354.gif)
 
-<div style="text-align:center"><img align="center" src="https://user-images.githubusercontent.com/68480967/88522162-99b5b580-d013-11ea-9fcc-b83217ea0354.gif" /></div>
-
-Full video: https://www.linkedin.com/posts/karan-owalekar_cnn-python-deeplearning-activity-6681643670577459200-cWZo/
+#### Full video: https://www.linkedin.com/posts/karan-owalekar_cnn-python-deeplearning-activity-6681643670577459200-cWZo/
 
 #### Working
 
